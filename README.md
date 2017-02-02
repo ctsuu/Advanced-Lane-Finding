@@ -163,7 +163,7 @@ M = cv2.getPerspectiveTransform(src, dst)
 Mi = cv2.getPerspectiveTransform(dst, src)
 
 ```
-I verified that my perspective transform was working as expected for resized images. by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+I verified that my perspective transform was working as expected for resized images. Load a test image and its warped counterpart to verify that the lane lines appear parallel in the warped image.
 
 <p align="center">
  <img src="./output_images/Bird_view_transform.png" width="800">
@@ -171,9 +171,35 @@ I verified that my perspective transform was working as expected for resized ima
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+I sliced the input image into n= 8 bars, each bar, I calculation the histogram and find the two peaks can represent the lane line location. Then save the good location points for left and right lane separely, then feed into a 2nd order polynomial function as showing:
+```
+from scipy import signal
 
-![alt text][image5]
+histogram = np.sum(combined[int(combined.shape[0]*3/8):int(combined.shape[0]*1/2),:], axis=0)
+plt.plot(histogram)
+
+peakind = signal.find_peaks_cwt(histogram, np.arange(1,15))
+```
+<p align="center">
+ <img src="./output_images/histogram_and_find_Peaks.png" width="800">
+</p>
+There are two part of work: 
+1. From last n sliced window, we can collect at least 3 good points for left or right lane, for example `lefty` and `leftx` that can fit into `left_fit = np.polyfit(lefty, leftx, 2)`, the output is the A, B, C values for polunomial function f(y)=Ay​2​​+By+C. 
+2. Calculate the left_fitx and right_fitx values according to each row in the picture space. `yvals` is an array to match the rows count in pixel/picture space. 
+
+```
+yvals = np.linspace(0, img.shape[0], num=img.shape[0])
+left_fit = np.polyfit(lefty, leftx, 2)
+left_fitx = left_fit[0]*yvals**2 + left_fit[1]*yvals + left_fit[2]
+right_fit = np.polyfit(righty, rightx, 2)
+right_fitx = right_fit[0]*yvals**2 + right_fit[1]*yvals + right_fit[2]
+```
+Then plot collected data points as red and blue dots, detected lane show as continuce curve:
+<p align="center">
+ <img src="./output_images/curve_fit.png" width="800">
+</p>
+
+
 
 ####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
