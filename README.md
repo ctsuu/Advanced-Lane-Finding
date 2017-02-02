@@ -199,11 +199,35 @@ Then plot collected data points as red and blue dots, detected lane show as cont
  <img src="./output_images/curve_fit.png" width="800">
 </p>
 
-
-
 ####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+Remember, the "bird_view" in this pipeline is not true bird view. Because of the camera is pointing forward and downward at small angle, in the view, the vertical pixel may repersent 100m and further. The horizotal pixel is repersenting the car width closely. There are the factors I used to convert pixel space to true environment.
+```
+# Define conversions in x and y from pixels space to meters
+ym_per_pix = 30/405 # meters per pixel in y dimension
+xm_per_pix = 3.7/600 # meteres per pixel in x dimension
+```
+
+Pick a y-value where we want radius of curvature. I choose the maximum y-value, corresponding to the bottom of the image
+y_eval = np.max(yvals). Because it is close to the vehical, the curve can reflect the steering angles. 
+
+```
+left_fit_cr = np.polyfit(np.array(lefty,dtype=np.float32)*ym_per_pix, \
+                         np.array(leftx,dtype=np.float32)*xm_per_pix, 2)
+right_fit_cr = np.polyfit(np.array(righty,dtype=np.float32)*ym_per_pix, \
+                          np.array(rightx,dtype=np.float32)*xm_per_pix, 2)
+
+def left_curverad(left_fit_cr, y_eval):
+    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval + left_fit_cr[1])**2)**1.5) \
+                             /np.absolute(2*left_fit_cr[0])
+    return left_curverad
+
+def right_curverad(right_fit_cr, y_eval):
+    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval + right_fit_cr[1])**2)**1.5) \
+                                /np.absolute(2*right_fit_cr[0])
+    return right_curverad
+```
+
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
