@@ -47,11 +47,43 @@ Then I can use the output `objpoints` and `imgpoints` to compute the camera cali
 
 ###Pipeline (single images)
 
-####1. Provide an example of a distortion-corrected image.
+####1. Apply distortion-correction to raw image.
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
+<p align="center">
+ <img src="./output_images/distortion_correction.png" width="720">
+</p>
+
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+I used a combination of color and gradient thresholds to generate a binary image. 
+I defined each transform and methods as a function, so I can call them later in the pipeline. 
+```
+def abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(0,255)):
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    # Apply x or y gradient with the OpenCV Sobel() function
+    # and take the absolute value
+    if orient == 'x':
+        abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 1, 0))
+    if orient == 'y':
+        abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 0, 1))
+    # Rescale back to 8 bit integer
+    scaled_sobel = np.uint8(255*abs_sobel/np.max(abs_sobel))
+    # Create a copy and apply the threshold
+    binary_output = np.zeros_like(scaled_sobel)
+    # Here I'm using inclusive (>=, <=) thresholds, but exclusive is ok too
+    binary_output[(scaled_sobel >= thresh[0]) & (scaled_sobel <= thresh[1])] = 1
+
+    # Return the result
+    return binary_output
+```
+<p align="center">
+ <img src="./output_images/Thresholded_x_Gradient.png" width="720">
+</p>
+<p align="center">
+ <img src="./output_images/Thresholded_y_Gradient.png" width="720">
+</p>
+
+(thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
 
 ![alt text][image3]
 
