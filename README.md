@@ -38,20 +38,59 @@ Any camera lens will have distortion problem as showing. I intent to use gopro c
  <img src="./output_images/GOPR7216s.JPG" width="720">
 </p>
 The code for this step is contained in the first code cell of the IPython notebook located in "./Advanced-Lane_Finging.ipynb".
-I am using opencv method. The key idea is using a knowing object, take many pictures from the camera and lens that you want to calibrate. You define the point location, you also need find point location in the picture space. Because of the lens distortion, the points location will not match at this point. Also do this manually is very time consuming and lead to error as well. OpenCV have automatic tools can help. I downloaded a 10x7 black and white chessboard from Udacity class for this task. I printed on 11x17 paper and put on flat surface. The chessboard has 9x6 inner corners. The black and white contrast make it easy and reliable detected by opencv. For the code, I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard inner corners in the world. Here is 9x6, counted by hand. For this project, I am using a flat surface, the z will be always = 0.  Thus, for each test image iteration, the detected corner (x,y) pixel location will be appended to `imgpoint`, and knowning `objp` will be appended into `objpoint`. The process needs 20 - 30 images from different angles and distances to cover the protential usage of the camera. 
+I am using opencv method. The key idea is using a knowing object, take many pictures from the camera and lens that you want to calibrate. You define the point location, you also need find point location in the picture space. Because of the lens distortion, the points location will not match at this point. Also do this manually is very time consuming and lead to error as well. OpenCV have automatic tools can help. 
+
+I downloaded a 10x7 black and white chessboard from Udacity class for this task. I printed on 11x17 paper and put on flat surface. The chessboard has 9x6 inner corners. The black and white contrast make it easy and reliable detected by opencv. For the code, I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard inner corners in the world. Here is 9x6, counted by hand. For this project, I am using a flat surface, the z will be always = 0.  Thus, for each test image iteration, the detected corner (x,y) pixel location will be appended to `imgpoint`, and knowning `objp` will be appended into `objpoint`. The process needs 20 - 30 images from different angles and distances to cover the protential usage of the camera. 
 
 Then I can use the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
 <p align="center">
  <img src="./output_images/GOPR7216u.JPG" width="720">
 </p>
 
+Then, save the result for future use. 
+```
+# Save the camera calibration result for later use (we won't worry about rvecs / tvecs)
+dist_pickle = {}
+dist_pickle["mtx"] = mtx
+dist_pickle["dist"] = dist
+pickle.dump( dist_pickle, open( "output_images/720x540_pickle.p", "wb" ) )
+```
+
 ###Pipeline (single images)
 
 ####1. Apply distortion-correction to raw image.
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
+Simply take the saved distortion_correction matrix for the right camera and right resulotion. For speedup the calculation and display, I resized the image to 720x405. All calibration is done on 720 resolution. I forgot change the input image size, it will look like this: 
 <p align="center">
- <img src="./output_images/distortion_correction.png" width="720">
+ <img src="./output_images/what_happening.png" width="800">
 </p>
+
+```
+# Read in the saved camera matrix and distortion coefficients
+# These are the arrays you calculated using cv2.calibrateCamera()
+dist_pickle = pickle.load( open( "output_images/720x540_pickle.p", "rb" ) )
+mtx = dist_pickle["mtx"]
+dist = dist_pickle["dist"]
+```
+
+
+<p align="center">
+ <img src="./output_images/distortion_correction.png" width="800">
+</p>
+I 
+```
+apex, apey = 360, 258
+offset_far = 50
+offset_near = 10
+src = np.float32([[int(apex-offset_far),apey],
+                  [int(apex+offset_far),apey],
+                  [int(0+offset_near),390],
+                  [int(720-offset_near),390]])
+dst = np.float32([[0,0],[720,0],[0,405],[720,405]])
+M = cv2.getPerspectiveTransform(src, dst)
+
+```
+
 
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 I used a combination of color and gradient thresholds to generate a binary image. 
@@ -77,10 +116,10 @@ def abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(0,255)):
     return binary_output
 ```
 <p align="center">
- <img src="./output_images/Thresholded_x_Gradient.png" width="720">
+ <img src="./output_images/Thresholded_x_Gradient.png" width="800">
 </p>
 <p align="center">
- <img src="./output_images/Thresholded_y_Gradient.png" width="720">
+ <img src="./output_images/Thresholded_y_Gradient.png" width="800">
 </p>
 
 (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
