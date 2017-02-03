@@ -199,7 +199,7 @@ Then plot collected data points as red and blue dots, detected lane show as cont
  <img src="./output_images/curve_fit.png" width="800">
 </p>
 
-####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+####5. Describe how you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
 Remember, the "bird_view" in this pipeline is not true bird view. Because of the camera is pointing forward and downward at small angle, in the view, the vertical pixel may repersent 100m and further. The horizotal pixel is repersenting the car width closely. There are the factors I used to convert pixel space to true environment.
 ```
@@ -227,26 +227,67 @@ def right_curverad(right_fit_cr, y_eval):
                                 /np.absolute(2*right_fit_cr[0])
     return right_curverad
 ```
-
+Next, calculate the camera position relative to lane lines. 
+```
+#Find camera position relative to lanes
+left = np.mean(leftx)
+right = np.mean(rightx)
+camera = combined.shape[1]/2-np.mean([left, right])
+```
+In above picture, the camera is 0.34mm off to the left. It make sense. 
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+<p align="center">
+ <img src="./output_images/Undistorted_to_Output.png" width="800">
+</p>
 
-![alt text][image6]
+There are two steps to do this task:
+1. Create a blank image warp_zero, same size as latest one in the pipeline. Use `cv2.fillPoly()` to draw the closed area and curverad information and Camera Position:
+```
+# Draw the lane onto the warped blank image
+warp_zero = np.zeros_like(warped).astype(np.uint8)
+cv2.fillPoly(warp_zero, pts, (0,255, 0))
+cv2.polylines(warp_zero, np.array([pts_left], dtype=np.int32), False,(255,0,0),thickness = 20)
+cv2.polylines(warp_zero, np.array([pts_right], dtype=np.int32), False,(0,0,255),thickness = 20)
+font = cv2.FONT_HERSHEY_SIMPLEX
+cv2.putText(img,'Left curverad' + ' ' + str(left_curverad) + 'm',(10,90), font, 1,(255,255,255),1)
+cv2.putText(img,'Right curverad' + ' ' + str(right_curverad) + 'm',(10,60), font, 1,(255,255,255),1)
+cv2.putText(img,'Camera Position' + ' ' + str(camera*xm_per_pix) + 'm',(10,30), font, 1,(255,255,255),1)
+```
+2. Use inverted perspective transform matrix and `cv2.warpPerspective(warp_zero, Mi, (img.shape[1], img.shape[0]))` to  transform the filled polylines to the ground. Then merge the projection with original image.
+```
+Mi = cv2.getPerspectiveTransform(dst, src)
+unwarp = cv2.warpPerspective(warp_zero, Mi, (img.shape[1], img.shape[0])) 
 
----
+# Combine the result with the original image
+result = cv2.addWeighted(img, 1, unwarp, 0.3, 0)
+result = cv2.resize(result, (720, 405))
+```
+The image processing pipeline is finished here. 
 
 ###Pipeline (video)
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result for project video](https://www.youtube.com/watch?v=oULk7j1S5Uw)
 
+Here's a [link to my video result for challenge video](https://www.youtube.com/watch?v=bs7Fg1PitH0)
+
+Here's a [link to my video result for harder challenge video](https://www.youtube.com/watch?v=xS1bxCb0AAM)
 ---
 
 ###Discussion
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+No 1, the speed is a concern. I know the canny edge detector is low cost, high speed detector. But Hough transform is resource heavy one. And this project I am using lot of transforms one after one. In first attempt, I used scipy  `signal.find_peaks_cwt(histogram, np.arange(1,15))`, the whole pipeline went through 1200~ resized images (720x405) for 7 minutes, it is about 2.8fps, too slow for real time application. Second attempt, I used Udacity sliding window detector, other transforms keep the same, the speed went up, it only took 2 minutes to finish 1200 images. It is about 10 fps, it can be useful for real time detection. I also checked the CPU usage, the second attempt used more CPU power, at 40% level, the first attempt only use 20% level. 
+
+No 2, tuning the threshholds for each transform is time consuming work. One setting may work for one picture but not work for other pictures. The robotic approach pipeline can handle the project video. But it has some difficulty to handle challenge video. And completely fail on the harder challenge. Based on Behavioral-Cloning project experience, I feel the challenge video is not a challenge for deep network at all. 
+
+####2. Future Work
+In this project, I didn't use moving average, smoothing technique, remember the previous frame at all, there are lot of room for improvement. 
+1. Reduce the picture size that go through the pipeline to gain more fps. Some student are talk about scale by 1/4, from 1280*720 image. I will try 200x66. If it works for neural network, it may work for robotic vision. 
+2. Add Neural network to the system. Neural network use GPU, robotic vision use CPU, get benefit from both.
+3. Keep tracking the defined lanes. The curve would not change suddenly, event you lose a few frames of image stream. Maybe can save and moving average the lane data points, or fitted curves, or even average the polylines. I think save more lane data points, extend the bird view area, to make it 3 pictures long or 5 pictures long is doable. 
+4. Maybe can fit to a circle formular, rather than polunomial function, and find the center point of that circle.
