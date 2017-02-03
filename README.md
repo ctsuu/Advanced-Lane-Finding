@@ -136,7 +136,52 @@ def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
  <img src="./output_images/Thresholded_mag_Gradient.png" width="800">
 </p>
 
-It looks close to Sobel y in this case. 
+It looks like Sobel y in this case. 
+This is a directional threshold function:
+```
+# Define a function to threshold an image for a given range and Sobel kernel
+def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):
+    # Grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    # Calculate the x and y gradients
+    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
+    sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
+    # Take the absolute value of the gradient direction, 
+    # apply a threshold, and create a binary image result
+    absgraddir = np.arctan2(np.absolute(sobely), np.absolute(sobelx))
+    binary_output =  np.zeros_like(absgraddir)
+    binary_output[(absgraddir >= thresh[0]) & (absgraddir <= thresh[1])] = 1
+
+    # Return the binary image
+    return binary_output
+```
+<p align="center">
+ <img src="./output_images/Thresholded_Grad_direction.png" width="800">
+</p>
+
+```
+# Define a function that thresholds the S-channel of HLS
+def hls_select(img, thresh=(0, 255)):
+    hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+    s_channel = hls[:,:,2]
+    binary_output = np.zeros_like(s_channel)
+    binary_output[(s_channel > thresh[0]) & (s_channel <= thresh[1])] = 1
+    return binary_output
+```
+<p align="center">
+ <img src="./output_images/Thresholded_S_channel.png" width="800">
+</p>
+
+Combine all thresholds effect together:
+```
+combined = np.zeros_like(dir_binary)
+combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))] = 1
+```
+<p align="center">
+ <img src="./output_images/Thresholded_combined.png" width="800">
+</p>
+
+
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -275,19 +320,19 @@ Here's a [link to my video result for project video](https://www.youtube.com/wat
 Here's a [link to my video result for challenge video](https://www.youtube.com/watch?v=bs7Fg1PitH0)
 
 Here's a [link to my video result for harder challenge video](https://www.youtube.com/watch?v=xS1bxCb0AAM)
----
+
 
 ###Discussion
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-No 1, the speed is a concern. I know the canny edge detector is low cost, high speed detector. But Hough transform is resource heavy one. And this project I am using lot of transforms one after one. In first attempt, I used scipy  `signal.find_peaks_cwt(histogram, np.arange(1,15))`, the whole pipeline went through 1200~ resized images (720x405) for 7 minutes, it is about 2.8fps, too slow for real time application. Second attempt, I used Udacity sliding window detector, other transforms keep the same, the speed went up, it only took 2 minutes to finish 1200 images. It is about 10 fps, it can be useful for real time detection. I also checked the CPU usage, the second attempt used more CPU power, at 40% level, the first attempt only use 20% level. 
+*No 1, the speed is a concern. I know the canny edge detector is low cost, high speed detector. But Hough transform is resource heavy one. And this project I am using lot of transforms one after one. In first attempt, I used scipy  `signal.find_peaks_cwt(histogram, np.arange(1,15))`, the whole pipeline went through 1200~ resized images (720x405) for 7 minutes, it is about 2.8fps, too slow for real time application. Second attempt, I used Udacity sliding window detector, other transforms keep the same, the speed went up, it only took 2 minutes to finish 1200 images. It is about 10 fps, it can be useful for real time detection. I also checked the CPU usage, the second attempt used more CPU power, at 40% level, the first attempt only use 20% level. 
 
-No 2, tuning the threshholds for each transform is time consuming work. One setting may work for one picture but not work for other pictures. The robotic approach pipeline can handle the project video. But it has some difficulty to handle challenge video. And completely fail on the harder challenge. Based on Behavioral-Cloning project experience, I feel the challenge video is not a challenge for deep network at all. 
+*No 2, tuning the threshholds for each transform is time consuming work. One setting may work for one picture but not work for other pictures. The robotic approach pipeline can handle the project video. But it has some difficulty to handle challenge video. And completely fail on the harder challenge. Based on Behavioral-Cloning project experience, I feel the challenge video is not a challenge for deep network at all. 
 
 ####2. Future Work
 In this project, I didn't use moving average, smoothing technique, remember the previous frame at all, there are lot of room for improvement. 
-1. Reduce the picture size that go through the pipeline to gain more fps. Some student are talk about scale by 1/4, from 1280*720 image. I will try 200x66. If it works for neural network, it may work for robotic vision. 
-2. Add Neural network to the system. Neural network use GPU, robotic vision use CPU, get benefit from both.
-3. Keep tracking the defined lanes. The curve would not change suddenly, event you lose a few frames of image stream. Maybe can save and moving average the lane data points, or fitted curves, or even average the polylines. I think save more lane data points, extend the bird view area, to make it 3 pictures long or 5 pictures long is doable. 
-4. Maybe can fit to a circle formular, rather than polunomial function, and find the center point of that circle.
+*1. Reduce the picture size that go through the pipeline to gain more fps. Some student are talk about scale by 1/4, from 1280*720 image. I will try 200x66. If it works for neural network, it may work for robotic vision. 
+*2. Add Neural network to the system. Neural network use GPU, robotic vision use CPU, get benefit from both.
+*3. Keep tracking the defined lanes. The curve would not change suddenly, event you lose a few frames of image stream. Maybe can save and moving average the lane data points, or fitted curves, or even average the polylines. I think save more lane data points, extend the bird view area, to make it 3 pictures long or 5 pictures long is doable. 
+*4. Maybe can fit to a circle formular, rather than polunomial function, and find the center point of that circle.
