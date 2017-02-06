@@ -279,12 +279,32 @@ left = np.mean(leftx)
 right = np.mean(rightx)
 camera = combined.shape[1]/2-np.mean([left, right])
 ```
+<p align="center">
+ <img src="./output_images/pipeline_output.png" width="800">
+</p>
+
 In above picture, the camera is 0.34mm off to the left. It make sense. 
+
+Also, I implement a 3 point circle detector, take 3 points from the curve above, calculate the turning radius and steering angle. 
+```
+def find_3p_circle_radius(x1,y1,x2,y2,x3,y3):
+    
+    # source : http://www.intmath.com/applications-differentiation/8-radius-curvature.php
+    m1 = (y2-y1)/(x2-x1)
+    m2 = (y3-y2)/(x3-x2)
+    
+    xc = (m1*m2*(y1-y3)+m2*(x1+x2)-m1*(x2+x3))/(2*(m2-m1))
+    yc = -(xc-(x1+x2)/2)/m1+(y1+y2)/2
+    
+    Radius = np.sqrt((x2-xc)*(x2-xc)+(y2-yc)*(y2-yc))
+    
+    return m1, m2, xc, yc, Radius
+```
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
 <p align="center">
- <img src="./output_images/Undistorted_to_Output.png" width="800">
+ <img src="./output_images/pipeline_output.png" width="800">
 </p>
 
 There are two steps to do this task:
@@ -316,6 +336,7 @@ The image processing pipeline is finished here.
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
 Here's a [link to my video result for project video](https://www.youtube.com/watch?v=oULk7j1S5Uw)
+Here's a [link to the similar video, with meaningful driving infomation](https://youtu.be/LrrwUhCorGY)
 
 Here's a [link to my video result for challenge video](https://www.youtube.com/watch?v=bs7Fg1PitH0)
 
@@ -326,13 +347,14 @@ Here's a [link to my video result for harder challenge video](https://www.youtub
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-*No 1, the speed is a concern. I know the canny edge detector is low cost, high speed detector. But Hough transform is resource heavy one. And this project I am using lot of transforms one after one. In first attempt, I used scipy  `signal.find_peaks_cwt(histogram, np.arange(1,15))`, the whole pipeline went through 1200~ resized images (720x405) for 7 minutes, it is about 2.8fps, too slow for real time application. Second attempt, I used Udacity sliding window detector, other transforms keep the same, the speed went up, it only took 2 minutes to finish 1200 images. It is about 10 fps, it can be useful for real time detection. I also checked the CPU usage, the second attempt used more CPU power, at 40% level, the first attempt only use 20% level. 
+*No 1, the speed is a concern. I know the canny edge detector is low cost, high speed detector. But Hough transform is resource heavy one. And this project I am using lot of transforms one after one. In first attempt, I used scipy  `signal.find_peaks_cwt(histogram, np.arange(1,15))`, the whole pipeline went through 1200~ resized images (720x405) for 7 minutes, it is about 2.8fps, too slow for real time application. Second attempt, I used Udacity sliding window detector, other transforms keep the same, the speed went up, it only took 2 minutes to finish 1261 images. It is about 10 fps, it can be useful for real time detection. I also checked the CPU usage, the second attempt used more CPU power, at 40% level, the first attempt only use 20% level. 
 
 *No 2, tuning the threshholds for each transform is time consuming work. One setting may work for one picture but not work for other pictures. The robotic approach pipeline can handle the project video. But it has some difficulty to handle challenge video. And completely fail on the harder challenge. Based on Behavioral-Cloning project experience, I feel the challenge video is not a challenge for deep network at all. 
 
+*No 3, display bug. I tried few options, the turning radius and steering angle still show unwanted '[', I don't know where it come from.  
 ####2. Future Work
 In this project, I didn't use moving average, smoothing technique, remember the previous frame at all, there are lot of room for improvement. 
 *1. Reduce the picture size that go through the pipeline to gain more fps. Some student are talk about scale by 1/4, from 1280*720 image. I will try 200x66. If it works for neural network, it may work for robotic vision. 
 *2. Add Neural network to the system. Neural network use GPU, robotic vision use CPU, get benefit from both.
 *3. Keep tracking the defined lanes. The curve would not change suddenly, event you lose a few frames of image stream. Maybe can save and moving average the lane data points, or fitted curves, or even average the polylines. I think save more lane data points, extend the bird view area, to make it 3 pictures long or 5 pictures long is doable. 
-*4. Maybe can fit to a circle formular, rather than polunomial function, and find the center point of that circle.
+*4. Maybe can fit to a circle formular, rather than polunomial function, and find the center point of that circle. 
