@@ -358,3 +358,9 @@ In this project, I didn't use moving average, smoothing technique, remember the 
 *2. Add Neural network to the system. Neural network use GPU, robotic vision use CPU, get benefit from both.
 *3. Keep tracking the defined lanes. The curve would not change suddenly, event you lose a few frames of image stream. Maybe can save and moving average the lane data points, or fitted curves, or even average the polylines. I think save more lane data points, extend the bird view area, to make it 3 pictures long or 5 pictures long is doable. 
 *4. Maybe can fit to a circle formular, rather than polunomial function, and find the center point of that circle. 
+
+###Acknowledgements
+
+Almost the entire project is based on Udacity teaching material. There are few additional resource found in:
+http://www.intmath.com/applications-differentiation/8-radius-curvature.php
+and inspired by slack channels and github.com. 
