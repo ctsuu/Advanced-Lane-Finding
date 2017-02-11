@@ -335,7 +335,7 @@ The image processing pipeline is finished here.
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to the similar video, with meaningful driving infomation](https://youtu.be/JFdmh8iZkRI)
+Here's a [link to my video result with steering angle and turning radius](https://youtu.be/JFdmh8iZkRI)
 
 Here's a [link to my video result for challenge video](https://www.youtube.com/watch?v=bs7Fg1PitH0)
 
