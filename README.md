@@ -250,7 +250,7 @@ Remember, the "bird_view" in this pipeline is not true bird view. Because of the
 ```
 # Define conversions in x and y from pixels space to meters
 ym_per_pix = 30/405 # meters per pixel in y dimension
-xm_per_pix = 3.7/600 # meteres per pixel in x dimension
+xm_per_pix = 3.7/500 # meteres per pixel in x dimension
 ```
 
 Pick a y-value where we want radius of curvature. I choose the maximum y-value, corresponding to the bottom of the image
@@ -335,8 +335,7 @@ The image processing pipeline is finished here.
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result for project video](https://www.youtube.com/watch?v=oULk7j1S5Uw)
-Here's a [link to the similar video, with meaningful driving infomation](https://youtu.be/LrrwUhCorGY)
+Here's a [link to the similar video, with meaningful driving infomation](https://youtu.be/JFdmh8iZkRI)
 
 Here's a [link to my video result for challenge video](https://www.youtube.com/watch?v=bs7Fg1PitH0)
 
